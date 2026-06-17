@@ -58,7 +58,7 @@ final class EditorGroup implements GroupInterface
                 id: self::FIELD_BLOCK_CATEGORY,
                 type: SettingField::TYPE_BOOLEAN,
                 label: __('Eigene Block-Kategorie', 'rh-editor'),
-                description: __('Gruppiert die gängigen Core-Blöcke in eine eigene Kategorie ganz oben im Blöcke-Tab, damit der Kunde die relevanten Bausteine gebündelt findet.', 'rh-editor'),
+                description: __('Gruppiert eine kuratierte Auswahl gängiger Core-Blöcke in eine eigene Kategorie ganz oben im Blöcke-Tab, damit der Kunde die relevanten Bausteine gebündelt findet. Die Auswahl ist kategorie-/set-basiert (fester Satz), keine frei konfigurierbare Block-Liste.', 'rh-editor'),
                 default: true,
                 keywords: ['kategorie', 'bloecke', 'category', 'inserter'],
             ),
