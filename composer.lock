@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "rh/blueprint-core",
-            "version": "v2.4.0",
+            "version": "v2.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/herbeckrobin/rh-blueprint-core.git",
-                "reference": "d6004821397ca3c89940a29f765850011701af3e"
+                "reference": "cf8786180841c91142776349ede84bf07e7cd93a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/herbeckrobin/rh-blueprint-core/zipball/d6004821397ca3c89940a29f765850011701af3e",
-                "reference": "d6004821397ca3c89940a29f765850011701af3e",
+                "url": "https://api.github.com/repos/herbeckrobin/rh-blueprint-core/zipball/cf8786180841c91142776349ede84bf07e7cd93a",
+                "reference": "cf8786180841c91142776349ede84bf07e7cd93a",
                 "shasum": ""
             },
             "require": {
@@ -40,10 +40,10 @@
             ],
             "description": "Geteilter Core fuer die rh-blueprint Plugin-Kollektion: Service-Registry, Settings-Framework, Shared Admin-UI, Environment-Helper.",
             "support": {
-                "source": "https://github.com/herbeckrobin/rh-blueprint-core/tree/v2.4.0",
+                "source": "https://github.com/herbeckrobin/rh-blueprint-core/tree/v2.4.1",
                 "issues": "https://github.com/herbeckrobin/rh-blueprint-core/issues"
             },
-            "time": "2026-06-17T10:18:15+00:00"
+            "time": "2026-06-17T10:46:22+00:00"
         },
         {
             "name": "yahnis-elsts/plugin-update-checker",
