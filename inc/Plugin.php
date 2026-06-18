@@ -39,7 +39,11 @@ final class Plugin
 
         $config = new BlockCategoryConfig();
         (new Editor($config))->boot();
-        (new BlockCategoryPage($config))->boot();
+
+        $roles = new RolesConfig();
+        (new RoleRestrictions($roles))->boot();
+
+        (new BlockCategoryPage($config, $roles))->boot();
 
         add_filter('rh-blueprint/dashboard/quick_links', static function (array $links): array {
             $links[] = [
