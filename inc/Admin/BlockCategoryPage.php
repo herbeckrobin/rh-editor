@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace RhEditor\Admin;
 
+use RhBlueprint\Core\Admin\Ui;
+use RhBlueprint\Core\Admin\Assets;
+use RhBlueprint\Core\Admin\Guard;
 use RhBlueprint\Core\Settings\SettingsHub;
 use RhBlueprint\Core\Settings\SettingsPage;
 use RhEditor\BlockCategoryConfig;
@@ -48,8 +51,7 @@ final class BlockCategoryPage
 
     public function enqueueAssets(string $hook): void
     {
-        $page = isset($_GET['page']) ? sanitize_key((string) $_GET['page']) : '';
-        if ($page !== SettingsPage::MENU_SLUG) {
+        if (! Assets::onSettings()) {
             return;
         }
         $abs = RHEDITOR_PLUGIN_DIR . 'assets/admin.css';
@@ -194,10 +196,11 @@ final class BlockCategoryPage
         wp_nonce_field(self::ACTION_TOGGLE, self::NONCE_TOGGLE);
         echo '<input type="hidden" name="action" value="' . esc_attr(self::ACTION_TOGGLE) . '">';
         echo '<input type="hidden" name="field" value="' . esc_attr($field) . '">';
-        printf(
-            '<label class="rhbp-switch"><input type="checkbox" name="enabled" value="1" %s onchange="this.form.submit()"><span class="rhbp-switch__track" aria-hidden="true"></span></label>',
-            checked($on, true, false)
-        );
+        echo Ui::switch([
+            'name' => 'enabled',
+            'checked' => $on,
+            'input' => ['onchange' => 'this.form.submit()'],
+        ]);
         echo '</form>';
 
         return (string) ob_get_clean();
@@ -275,7 +278,7 @@ final class BlockCategoryPage
         ];
 
         echo '<div class="rhbp-modal-backdrop" id="rheditor-modal-role-' . esc_attr($slug) . '" data-rhbp-modal-backdrop>';
-        echo '<div class="rhbp-modal" role="dialog" aria-modal="true">';
+        echo '<div class="rhbp-modal" role="dialog" aria-modal="true" aria-label="' . esc_attr($this->roles->roleLabel($slug)) . '">';
 
         echo '<div class="rhbp-modal__head"><div class="rhbp-modal__head-l">';
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- internes SVG.
@@ -435,12 +438,7 @@ final class BlockCategoryPage
 
     private function guard(string $nonceField, string $action): void
     {
-        if (! isset($_POST[$nonceField]) || ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST[$nonceField])), $action)) {
-            wp_die(esc_html__('Sicherheitsprüfung fehlgeschlagen.', 'rh-editor'));
-        }
-        if (! current_user_can(self::CAP)) {
-            wp_die(esc_html__('Keine Berechtigung.', 'rh-editor'));
-        }
+        Guard::form($action, self::CAP, $nonceField);
     }
 
     private function redirect(string $message): never
@@ -467,6 +465,13 @@ final class BlockCategoryPage
 
     private function icon(string $name, string $extraClass = ''): string
     {
+        // Geteilte Symbole kommen aus dem Core, damit derselbe Knopf überall
+        // dieselbe Form hat. Papierkorb, Kopieren und Neu laden waren vorher
+        // in mehreren Modulen mehrere Zeichnungen.
+        if (Ui::hasIcon($name)) {
+            return Ui::icon($name, '', $extraClass);
+        }
+
         $paths = [
             'layout' => '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
             'image' => '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',

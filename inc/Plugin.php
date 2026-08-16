@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RhEditor;
 
 use RhBlueprint\Core\Core;
+use RhBlueprint\Core\UpdateChecker;
 use RhBlueprint\Core\Settings\SettingsPage;
 use RhEditor\Admin\BlockCategoryPage;
 
@@ -20,9 +21,9 @@ final class Plugin
 {
     public static function boot(): void
     {
-        if (class_exists(UpdateChecker::class)) {
-            (new UpdateChecker())->boot();
-        }
+        add_action('plugins_loaded', static function (): void {
+            (new UpdateChecker('rh-editor', RHEDITOR_PLUGIN_FILE))->boot();
+        }, 0);
 
         // Früh, vor after_setup_theme/init.
         add_action('after_setup_theme', [Editor::class, 'onAfterSetupTheme'], 11);
