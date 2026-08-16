@@ -51,7 +51,7 @@ final class BlockCategoryPage
 
     public function enqueueAssets(string $hook): void
     {
-        if (! Assets::onSettings()) {
+        if (! Assets::onSettings(self::TAB)) {
             return;
         }
         $abs = RHEDITOR_PLUGIN_DIR . 'assets/admin.css';
@@ -235,23 +235,17 @@ final class BlockCategoryPage
     {
         $label = (string) rhbp_setting(EditorGroup::GROUP_ID, EditorGroup::FIELD_CATEGORY_LABEL, 'Bausteine');
 
-        echo '<div class="rhbp-modal-backdrop" id="rheditor-modal-category" data-rhbp-modal-backdrop>';
-        echo '<div class="rhbp-modal" role="dialog" aria-modal="true" aria-label="' . esc_attr__('Inhalt der Block-Kategorie', 'rh-editor') . '">';
+        echo Ui::modalOpen([
+            'id' => 'rheditor-modal-category',
+            'title' => __('Eigene Block-Kategorie', 'rh-editor'),
+            'subtitle' => __('Name und welche Blöcke gebündelt werden.', 'rh-editor'),
+            'iconMarkup' => $this->icon('grid'),
+            'form' => admin_url('admin-post.php'),
+        ]);
 
-        echo '<div class="rhbp-modal__head"><div class="rhbp-modal__head-l">';
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- internes SVG.
-        echo $this->icon('grid');
-        echo '<div><h3 class="rhbp-modal__title">' . esc_html__('Eigene Block-Kategorie', 'rh-editor') . '</h3><p class="rhbp-modal__sub">' . esc_html__('Name und welche Blöcke gebündelt werden.', 'rh-editor') . '</p></div>';
-        echo '</div>';
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- internes SVG.
-        echo '<button type="button" class="rhbp-btn rhbp-btn--ghost rhbp-btn--icon" data-rhbp-modal-close aria-label="' . esc_attr__('Schließen', 'rh-editor') . '">' . $this->icon('close') . '</button>';
-        echo '</div>';
-
-        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         wp_nonce_field(self::ACTION_SAVE_CATEGORY, self::NONCE_CATEGORY);
         echo '<input type="hidden" name="action" value="' . esc_attr(self::ACTION_SAVE_CATEGORY) . '">';
 
-        echo '<div class="rhbp-modal__body">';
         echo '<div class="rhbp-field"><label for="rheditor_label">' . esc_html__('Name der Kategorie', 'rh-editor') . '</label>';
         echo '<input type="text" id="rheditor_label" name="category_label" class="regular-text" value="' . esc_attr($label) . '"></div>';
 
@@ -261,10 +255,7 @@ final class BlockCategoryPage
 
         echo '<h4 class="rhed-modal-section">' . esc_html__('Einzelne Blöcke', 'rh-editor') . '</h4>';
         $this->renderBlockList();
-        echo '</div>';
-
         $this->modalFoot();
-        echo '</form></div></div>';
     }
 
     private function renderRoleModal(string $slug): void
@@ -277,24 +268,18 @@ final class BlockCategoryPage
             RolesConfig::MODE_CONTENT => [__('Nur Inhalt', 'rh-editor'), __('Nur Texte und Bilder ändern, nichts einfügen oder umbauen.', 'rh-editor')],
         ];
 
-        echo '<div class="rhbp-modal-backdrop" id="rheditor-modal-role-' . esc_attr($slug) . '" data-rhbp-modal-backdrop>';
-        echo '<div class="rhbp-modal" role="dialog" aria-modal="true" aria-label="' . esc_attr($this->roles->roleLabel($slug)) . '">';
+        echo Ui::modalOpen([
+            'id' => 'rheditor-modal-role-' . $slug,
+            'title' => $this->roles->roleLabel($slug),
+            'subtitle' => __('Wie viel diese Rolle im Editor darf.', 'rh-editor'),
+            'iconMarkup' => $this->icon('user'),
+            'form' => admin_url('admin-post.php'),
+        ]);
 
-        echo '<div class="rhbp-modal__head"><div class="rhbp-modal__head-l">';
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- internes SVG.
-        echo $this->icon('user');
-        echo '<div><h3 class="rhbp-modal__title">' . esc_html($this->roles->roleLabel($slug)) . '</h3><p class="rhbp-modal__sub">' . esc_html__('Wie viel diese Rolle im Editor darf.', 'rh-editor') . '</p></div>';
-        echo '</div>';
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- internes SVG.
-        echo '<button type="button" class="rhbp-btn rhbp-btn--ghost rhbp-btn--icon" data-rhbp-modal-close aria-label="' . esc_attr__('Schließen', 'rh-editor') . '">' . $this->icon('close') . '</button>';
-        echo '</div>';
-
-        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         wp_nonce_field(self::ACTION_SAVE_ROLE, self::NONCE_ROLE);
         echo '<input type="hidden" name="action" value="' . esc_attr(self::ACTION_SAVE_ROLE) . '">';
         echo '<input type="hidden" name="role" value="' . esc_attr($slug) . '">';
 
-        echo '<div class="rhbp-modal__body">';
         echo '<div class="rhbp-option-grid">';
         foreach ($modes as $value => [$label, $desc]) {
             $checked = $currentMode === $value;
@@ -309,18 +294,16 @@ final class BlockCategoryPage
         echo '<input type="checkbox" name="role_styles" value="1"' . checked($stylesOn, true, false) . '>';
         echo '<span class="rhbp-check-row__text"><span class="rhbp-check-row__label">' . esc_html__('Site-weite Stile bearbeiten', 'rh-editor') . '</span><span class="rhbp-check-row__desc">' . esc_html__('Zugang zum Stile-Bereich im Site-Editor (nur Stile, keine Templates).', 'rh-editor') . '</span></span>';
         echo '</label>';
-        echo '</div>';
-
         $this->modalFoot();
-        echo '</form></div></div>';
     }
 
     private function modalFoot(): void
     {
-        echo '<div class="rhbp-modal__foot">';
-        echo '<button type="button" class="rhbp-btn rhbp-btn--ghost" data-rhbp-modal-close>' . esc_html__('Abbrechen', 'rh-editor') . '</button>';
-        echo '<button type="submit" class="rhbp-btn rhbp-btn--primary">' . esc_html__('Speichern', 'rh-editor') . '</button>';
-        echo '</div>';
+        echo Ui::modalClose([
+            'primary' => __('Speichern', 'rh-editor'),
+            'cancel' => __('Abbrechen', 'rh-editor'),
+            'form' => true,
+        ]);
     }
 
     private function renderCategoryTable(): void
