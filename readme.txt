@@ -4,7 +4,7 @@ Tags: editor, gutenberg, svg, block patterns, block styles
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.1.1
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,12 @@ The block whitelist for the category is extensible via the rh-blueprint/editor/c
 Part of the rh-blueprint collection. Settings live under RH Blueprint > Editor.
 
 == Changelog ==
+
+= 0.2.1 =
+* Internal: shared building blocks from core 2.6.0. The update check no longer loads on regular front-end requests.
+
+= 0.2.1 =
+* Internal: shared building blocks from core 2.6.0. The update check no longer loads on regular front-end requests.
 
 = 0.1.0 =
 * Initial release: inserter cleanup, curated block category, opt-in SVG upload with sanitisation, idempotent block-style helper.
