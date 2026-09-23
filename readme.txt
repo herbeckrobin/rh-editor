@@ -4,7 +4,7 @@ Tags: editor, gutenberg, svg, block patterns, block styles
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.2.2
+Stable tag: 0.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,10 @@ The block whitelist for the category is extensible via the rh-blueprint/editor/c
 Part of the rh-blueprint collection. Settings live under RH Blueprint > Editor.
 
 == Changelog ==
+
+= 0.2.3 =
+* Update checks: use a GitHub token from RH_GITHUB_TOKEN (environment variable or wp-config constant) when one is set, which lifts the API limit from 60 to 5,000 requests per hour. Without a token nothing changes.
+* Update checks: after a GitHub rate-limit response all rh modules on the site pause their checks until GitHub resets the limit, and the last known update is kept. Bundles core 2.7.1.
 
 = 0.2.2 =
 * Fix: bundle core 2.6.1. The 2.6.0 release bundled an incomplete core.
