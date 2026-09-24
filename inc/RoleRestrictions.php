@@ -20,6 +20,10 @@ use WP_User;
  *  - user_has_cap: gibt Stile- und Vorlagen-Rollen edit_theme_options
  *    (Site-Editor). Per JS wird der Site-Editor auf das Freigegebene reduziert:
  *    nur Stile, oder Vorlagen ohne den Stile-Bereich.
+ *  - rest_request_before_callbacks + map_meta_cap: reine Stile-Rollen bekommen
+ *    serverseitig keinen Schreibzugriff auf Vorlagen, Navigation, Menüs und
+ *    Widgets, und keinen Customizer. edit_theme_options öffnet im Core all das
+ *    auf einmal, die Grenze "nur Stile" hält sonst nur die Oberfläche.
  *
  * Der Administrator (manage_options) ist nie betroffen.
  */
@@ -49,6 +53,23 @@ final class RoleRestrictions
         'core/quote', 'core/spacer', 'core/separator', 'core/cover', 'core/gallery',
     ];
 
+    /**
+     * REST-Routen, die eine reine Stile-Rolle nicht schreiben darf. Lesen bleibt
+     * offen, die Stile-Vorschau im Site-Editor rendert die Vorlagen.
+     *
+     * @var array<int, string>
+     */
+    private const STYLES_ONLY_LOCKED_ROUTES = [
+        '/wp/v2/templates',
+        '/wp/v2/template-parts',
+        '/wp/v2/navigation',
+        '/wp/v2/menus',
+        '/wp/v2/menu-items',
+        '/wp/v2/menu-locations',
+        '/wp/v2/widgets',
+        '/wp/v2/sidebars',
+    ];
+
     public function __construct(private readonly RolesConfig $config)
     {
     }
@@ -58,6 +79,10 @@ final class RoleRestrictions
         add_filter('block_editor_settings_all', [$this, 'filterEditorSettings'], 10, 2);
         add_filter('allowed_block_types_all', [$this, 'filterAllowedBlocks'], 20, 2);
         add_filter('user_has_cap', [$this, 'grantSiteEditorCap'], 10, 4);
+        add_filter('map_meta_cap', [$this, 'denyCustomizer'], 10, 2);
+        add_filter('rest_request_before_callbacks', [$this, 'lockStylesOnlyWrites'], 10, 3);
+        add_action('load-nav-menus.php', [$this, 'blockClassicThemeScreens']);
+        add_action('load-widgets.php', [$this, 'blockClassicThemeScreens']);
         add_action('enqueue_block_editor_assets', [$this, 'enqueueAssets']);
     }
 
@@ -156,6 +181,75 @@ final class RoleRestrictions
     }
 
     /**
+     * Kein Customizer über die Freigaben: er käme über edit_theme_options mit und
+     * öffnet Menüs, Widgets und Zusatz-CSS. Der Site-Editor deckt beide Freigaben ab.
+     *
+     * @param array<int, string> $caps
+     * @return array<int, string>
+     */
+    public function denyCustomizer(array $caps, string $cap): array
+    {
+        if ($cap !== 'customize') {
+            return $caps;
+        }
+
+        [$styles, $templates] = $this->currentUserSiteEditorAccess();
+        if (($styles || $templates) && ! $this->userHasOwnThemeOptions()) {
+            return ['do_not_allow'];
+        }
+
+        return $caps;
+    }
+
+    /**
+     * Schreibende REST-Requests reiner Stile-Rollen auf Vorlagen, Navigation,
+     * Menüs und Widgets abweisen. Greift auch in Batch-Requests.
+     *
+     * @param mixed         $response
+     * @param array<mixed>  $handler
+     * @return mixed
+     */
+    public function lockStylesOnlyWrites($response, $handler, \WP_REST_Request $request)
+    {
+        if ($response instanceof \WP_Error) {
+            return $response;
+        }
+        if (in_array($request->get_method(), ['GET', 'HEAD', 'OPTIONS'], true)) {
+            return $response;
+        }
+        if (! $this->currentUserStylesOnly()) {
+            return $response;
+        }
+
+        $route = $request->get_route();
+        foreach (self::STYLES_ONLY_LOCKED_ROUTES as $prefix) {
+            if ($route === $prefix || str_starts_with($route, $prefix . '/')) {
+                return new \WP_Error(
+                    'rheditor_styles_only',
+                    __('Mit dieser Rolle lassen sich im Site-Editor nur die Stile ändern.', 'rh-editor'),
+                    ['status' => 403]
+                );
+            }
+        }
+
+        return $response;
+    }
+
+    /**
+     * Klassische Menü- und Widget-Seiten für reine Stile-Rollen sperren.
+     */
+    public function blockClassicThemeScreens(): void
+    {
+        if ($this->currentUserStylesOnly()) {
+            wp_die(
+                esc_html__('Mit dieser Rolle lassen sich nur die Stile der Website ändern.', 'rh-editor'),
+                '',
+                ['response' => 403, 'back_link' => true]
+            );
+        }
+    }
+
+    /**
      * Editor-JS für Vorlagen-Modus (Blöcke-Tab weg) und die Reduktion des
      * Site-Editors. Konfiguration kommt aus dem aktuellen User.
      */
@@ -241,6 +335,33 @@ final class RoleRestrictions
         }
 
         return [$this->config->userHasStyles($user), $this->config->userHasTemplates($user)];
+    }
+
+    private function currentUserStylesOnly(): bool
+    {
+        [$styles, $templates] = $this->currentUserSiteEditorAccess();
+
+        return $styles && ! $templates && ! $this->userHasOwnThemeOptions();
+    }
+
+    /**
+     * Hat der User edit_theme_options schon über seine Rolle selbst (z.B. eine
+     * eigene Rolle mit Design-Rechten)? Dann schränken die Freigaben nichts ein.
+     */
+    private function userHasOwnThemeOptions(): bool
+    {
+        $user = wp_get_current_user();
+        if (! $user instanceof WP_User || $user->ID === 0) {
+            return false;
+        }
+        foreach ($user->roles as $slug) {
+            $role = get_role($slug);
+            if ($role !== null && ! empty($role->capabilities['edit_theme_options'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isPostEditorContext($context): bool
