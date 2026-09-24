@@ -4,7 +4,7 @@ Tags: editor, gutenberg, svg, block patterns, block styles
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.2.3
+Stable tag: 0.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,10 @@ The block whitelist for the category is extensible via the rh-blueprint/editor/c
 Part of the rh-blueprint collection. Settings live under RH Blueprint > Editor.
 
 == Changelog ==
+
+= 0.2.4 =
+* New role option "Vorlagen und Logo bearbeiten": the role can edit templates, template parts, navigation and patterns in the site editor, plus the site logo and site icon. Settings access is limited to logo and icon, every other site setting stays locked. Off by default.
+* Security: roles with only "Site-weite Stile bearbeiten" can no longer write templates, template parts, navigation, menus or widgets through the REST API, and lose access to the Customizer, the menus screen and the widgets screen. Before, only the site editor interface hid these areas.
 
 = 0.2.3 =
 * Update checks: use a GitHub token from RH_GITHUB_TOKEN (environment variable or wp-config constant) when one is set, which lifts the API limit from 60 to 5,000 requests per hour. Without a token nothing changes.
