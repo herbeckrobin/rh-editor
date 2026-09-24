@@ -3,6 +3,7 @@
  * Konfiguration kommt aus PHP (wp_localize_script -> window.rhEditorRoles):
  *   mode:        'full' | 'patterns' | 'content'
  *   stylesOnly:  boolean (Site-Editor auf Stile reduzieren)
+ *   hideStyles:  boolean (Vorlagen frei, aber Stile-Bereich ausblenden)
  *
  * "Nur Inhalt" (content) wird über die offizielle setBlockEditingMode-API
  * umgesetzt: Root -> 'disabled' (Struktur gesperrt, kein Einfügen), bestehende
@@ -23,6 +24,8 @@
 		// (der würde sonst Templates sperren).
 		if ( cfg.stylesOnly ) {
 			reduceSiteEditor();
+		} else if ( cfg.hideStyles ) {
+			hideStylesArea();
 		}
 	} else if ( cfg.mode === 'content' ) {
 		enforceContentOnly();
@@ -121,6 +124,20 @@
 	 * den site-weiten Stilen. Reine UI-Reduktion (edit_theme_options ist server-
 	 * seitig voll, das ist bewusst und für Endkunden-Pflege ausreichend).
 	 */
+	/**
+	 * Vorlagen-Freigabe ohne Stile: den Stile-Bereich ausblenden, alles andere
+	 * bleibt. Reine UI-Reduktion wie oben, serverseitig hängen Stile und
+	 * Vorlagen beide an edit_theme_options.
+	 */
+	function hideStylesArea() {
+		wp.domReady( function () {
+			var style = document.createElement( 'style' );
+			style.textContent =
+				'.edit-site-sidebar-navigation-item[href*="styles"]{display:none!important;}';
+			document.head.appendChild( style );
+		} );
+	}
+
 	function reduceSiteEditor() {
 		wp.domReady( function () {
 			var style = document.createElement( 'style' );

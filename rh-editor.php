@@ -4,7 +4,7 @@
  * Plugin Name:       RH Editor
  * Plugin URI:        https://github.com/herbeckrobin/rh-editor
  * Update URI:        https://github.com/herbeckrobin/rh-editor
- * Description:       Editor-Souveränität: SVG-Upload mit Sanitisierung, Inserter aufräumen, genutzte Core-Blöcke in eine eigene Kategorie gruppieren, Editor pro Rolle einschränken (nur Inhalt, nur Vorlagen) und site-weite Stile freigeben. Teil der rh-blueprint Kollektion.
+ * Description:       Editor-Souveränität: SVG-Upload mit Sanitisierung, Inserter aufräumen, genutzte Core-Blöcke in eine eigene Kategorie gruppieren, Editor pro Rolle einschränken (nur Inhalt, nur Vorlagen) und site-weite Stile oder Vorlagen freigeben. Teil der rh-blueprint Kollektion.
  * Version:           0.2.3
  * Requires at least: 6.5
  * Requires PHP:      8.1

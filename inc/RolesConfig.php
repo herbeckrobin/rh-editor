@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RhEditor;
 
 use WP_Role;
+use WP_User;
 
 /**
  * Pro-Rolle-Konfiguration der Editor-Erfahrung.
@@ -15,9 +16,12 @@ use WP_Role;
  *      patterns = nur Muster einfügen (Blöcke-Tab weg), danach frei bearbeiten
  *      content  = nur Inhalt (contentOnly), nichts einfügen/verschieben
  *  - Stile: darf die Rolle site-weite Stile im Site-Editor bearbeiten (edit_theme_options).
+ *  - Vorlagen: darf die Rolle Vorlagen und Vorlagenteile im Site-Editor bearbeiten,
+ *    inklusive Logo und Website-Icon (edit_theme_options + schmaler Settings-Zugang).
  *
  * Bespoke Option (kein SettingField, weil pro-Rolle-Matrix). Default je Rolle =
- * voller Modus + Stile aus, also greift nichts, solange nichts gespeichert wurde.
+ * voller Modus, Stile und Vorlagen aus, also greift nichts, solange nichts
+ * gespeichert wurde.
  * Verwaltet werden nur Rollen, die Beiträge bearbeiten dürfen (edit_posts) und
  * nicht admin-äquivalent sind (kein manage_options), der Administrator bleibt voll.
  */
@@ -31,9 +35,10 @@ final class RolesConfig
 
     public const KEY_MODE = 'mode';
     public const KEY_STYLES = 'styles';
+    public const KEY_TEMPLATES = 'templates';
 
     /**
-     * @var array<string, array{mode: string, styles: bool}>|null
+     * @var array<string, array{mode: string, styles: bool, templates: bool}>|null
      */
     private ?array $data = null;
 
@@ -95,6 +100,13 @@ final class RolesConfig
         return is_array($entry) && ! empty($entry[self::KEY_STYLES]);
     }
 
+    public function templatesEnabled(string $roleSlug): bool
+    {
+        $entry = $this->all()[$roleSlug] ?? null;
+
+        return is_array($entry) && ! empty($entry[self::KEY_TEMPLATES]);
+    }
+
     /**
      * Rollen-Slugs, deren Modus eine bestimmte Stufe hat.
      *
@@ -130,7 +142,41 @@ final class RolesConfig
     }
 
     /**
-     * @return array<string, array{mode: string, styles: bool}>
+     * Rollen-Slugs, die Vorlagen im Site-Editor bearbeiten dürfen.
+     *
+     * @return array<int, string>
+     */
+    public function rolesWithTemplates(): array
+    {
+        $slugs = [];
+        foreach (array_keys($this->managedRoles()) as $slug) {
+            if ($this->templatesEnabled($slug)) {
+                $slugs[] = $slug;
+            }
+        }
+
+        return $slugs;
+    }
+
+    /**
+     * Hat der User über eine verwaltete Rolle die Stile-Freigabe? Admins
+     * (manage_options) laufen nie über diese Freigaben.
+     */
+    public function userHasStyles(WP_User $user): bool
+    {
+        return array_intersect($this->rolesWithStyles(), $user->roles) !== [];
+    }
+
+    /**
+     * Hat der User über eine verwaltete Rolle die Vorlagen-Freigabe?
+     */
+    public function userHasTemplates(WP_User $user): bool
+    {
+        return array_intersect($this->rolesWithTemplates(), $user->roles) !== [];
+    }
+
+    /**
+     * @return array<string, array{mode: string, styles: bool, templates: bool}>
      */
     private function all(): array
     {
@@ -146,6 +192,7 @@ final class RolesConfig
                     $clean[(string) $slug] = [
                         self::KEY_MODE => in_array($mode, self::MODES, true) ? $mode : self::MODE_FULL,
                         self::KEY_STYLES => ! empty($entry[self::KEY_STYLES]),
+                        self::KEY_TEMPLATES => ! empty($entry[self::KEY_TEMPLATES]),
                     ];
                 }
             }
@@ -156,14 +203,16 @@ final class RolesConfig
     }
 
     /**
-     * Speichert Modus + Stile-Flag pro Rolle. Nur verwaltbare Rollen und gültige
-     * Modi landen in der Option (kein Müll). Eine Rolle im Default-Zustand
-     * (voll + Stile aus) wird weggelassen, damit die Option schlank bleibt.
+     * Speichert Modus, Stile- und Vorlagen-Flag pro Rolle. Nur verwaltbare Rollen
+     * und gültige Modi landen in der Option (kein Müll). Eine Rolle im
+     * Default-Zustand (voll, Stile und Vorlagen aus) wird weggelassen, damit die
+     * Option schlank bleibt.
      *
-     * @param array<string, string> $modes  roleSlug => mode
-     * @param array<string, bool>   $styles roleSlug => enabled
+     * @param array<string, string> $modes     roleSlug => mode
+     * @param array<string, bool>   $styles    roleSlug => enabled
+     * @param array<string, bool>   $templates roleSlug => enabled
      */
-    public function save(array $modes, array $styles): void
+    public function save(array $modes, array $styles, array $templates = []): void
     {
         $clean = [];
         foreach (array_keys($this->managedRoles()) as $slug) {
@@ -172,14 +221,16 @@ final class RolesConfig
                 $mode = self::MODE_FULL;
             }
             $stylesOn = ! empty($styles[$slug]);
+            $templatesOn = ! empty($templates[$slug]);
 
-            if ($mode === self::MODE_FULL && ! $stylesOn) {
+            if ($mode === self::MODE_FULL && ! $stylesOn && ! $templatesOn) {
                 continue;
             }
 
             $clean[$slug] = [
                 self::KEY_MODE => $mode,
                 self::KEY_STYLES => $stylesOn,
+                self::KEY_TEMPLATES => $templatesOn,
             ];
         }
 
@@ -189,9 +240,10 @@ final class RolesConfig
 
     /**
      * Aktualisiert genau eine Rolle (für den per-Rolle-Modal-Save), die anderen
-     * bleiben unberührt. Default-Zustand (voll + Stile aus) wird wieder entfernt.
+     * bleiben unberührt. Default-Zustand (voll, Stile und Vorlagen aus) wird
+     * wieder entfernt.
      */
-    public function saveRole(string $slug, string $mode, bool $styles): void
+    public function saveRole(string $slug, string $mode, bool $styles, bool $templates = false): void
     {
         if (! isset($this->managedRoles()[$slug])) {
             return;
@@ -201,10 +253,14 @@ final class RolesConfig
         }
 
         $all = $this->all();
-        if ($mode === self::MODE_FULL && ! $styles) {
+        if ($mode === self::MODE_FULL && ! $styles && ! $templates) {
             unset($all[$slug]);
         } else {
-            $all[$slug] = [self::KEY_MODE => $mode, self::KEY_STYLES => $styles];
+            $all[$slug] = [
+                self::KEY_MODE => $mode,
+                self::KEY_STYLES => $styles,
+                self::KEY_TEMPLATES => $templates,
+            ];
         }
 
         update_option(self::OPTION, $all);

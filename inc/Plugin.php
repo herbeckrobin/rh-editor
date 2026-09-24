@@ -43,6 +43,7 @@ final class Plugin
 
         $roles = new RolesConfig();
         (new RoleRestrictions($roles))->boot();
+        (new SiteIdentityAccess($roles))->boot();
 
         (new BlockCategoryPage($config, $roles))->boot();
 

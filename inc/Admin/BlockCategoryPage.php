@@ -225,6 +225,9 @@ final class BlockCategoryPage
         if ($this->roles->stylesEnabled($slug)) {
             $html .= '<span class="rhbp-pill rhbp-pill--ok">' . esc_html__('Stile', 'rh-editor') . '</span>';
         }
+        if ($this->roles->templatesEnabled($slug)) {
+            $html .= '<span class="rhbp-pill rhbp-pill--ok">' . esc_html__('Layout', 'rh-editor') . '</span>';
+        }
 
         return $html;
     }
@@ -262,6 +265,7 @@ final class BlockCategoryPage
     {
         $currentMode = $this->roles->mode($slug);
         $stylesOn = $this->roles->stylesEnabled($slug);
+        $templatesOn = $this->roles->templatesEnabled($slug);
         $modes = [
             RolesConfig::MODE_FULL => [__('Alles dürfen', 'rh-editor'), __('Voller Editor, keine Einschränkung.', 'rh-editor')],
             RolesConfig::MODE_PATTERNS => [__('Nur Vorlagen', 'rh-editor'), __('Nur Muster einfügbar, der Blöcke-Tab ist weg.', 'rh-editor')],
@@ -293,6 +297,11 @@ final class BlockCategoryPage
         echo '<label class="rhbp-check-row" style="margin-top:.8rem">';
         echo '<input type="checkbox" name="role_styles" value="1"' . checked($stylesOn, true, false) . '>';
         echo '<span class="rhbp-check-row__text"><span class="rhbp-check-row__label">' . esc_html__('Site-weite Stile bearbeiten', 'rh-editor') . '</span><span class="rhbp-check-row__desc">' . esc_html__('Zugang zum Stile-Bereich im Site-Editor (nur Stile, keine Templates).', 'rh-editor') . '</span></span>';
+        echo '</label>';
+
+        echo '<label class="rhbp-check-row" style="margin-top:.8rem">';
+        echo '<input type="checkbox" name="role_templates" value="1"' . checked($templatesOn, true, false) . '>';
+        echo '<span class="rhbp-check-row__text"><span class="rhbp-check-row__label">' . esc_html__('Vorlagen und Logo bearbeiten', 'rh-editor') . '</span><span class="rhbp-check-row__desc">' . esc_html__('Zugang zu Vorlagen, Kopf- und Fußzeile, Navigation und Mustern im Site-Editor, dazu Logo und Website-Icon. Damit kann die Rolle das Layout jeder Seite ändern, Bereiche löschen und Vorlagen auf den Theme-Stand zurücksetzen. Übrige Einstellungen der Website bleiben gesperrt.', 'rh-editor') . '</span></span>';
         echo '</label>';
         $this->modalFoot();
     }
@@ -411,9 +420,10 @@ final class BlockCategoryPage
         $slug = isset($_POST['role']) ? sanitize_key(wp_unslash($_POST['role'])) : '';
         $mode = isset($_POST['role_mode']) ? sanitize_key(wp_unslash($_POST['role_mode'])) : RolesConfig::MODE_FULL;
         $styles = isset($_POST['role_styles']);
+        $templates = isset($_POST['role_templates']);
 
         if ($slug !== '') {
-            $this->roles->saveRole($slug, $mode, $styles);
+            $this->roles->saveRole($slug, $mode, $styles, $templates);
         }
 
         $this->redirect('role_saved');

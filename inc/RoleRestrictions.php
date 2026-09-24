@@ -17,8 +17,9 @@ use WP_User;
  *    aus (Modus "content"/"patterns"). Nur im Seiten-/Beitrags-Editor.
  *  - allowed_block_types_all: im Vorlagen-Modus nur die Bausteine, die in den
  *    Theme-Mustern vorkommen, damit der Kunde aus Mustern baut statt frei.
- *  - user_has_cap: gibt Stile-Rollen edit_theme_options (Site-Editor). Per JS
- *    wird der Site-Editor für diese Rollen auf "Stile" reduziert.
+ *  - user_has_cap: gibt Stile- und Vorlagen-Rollen edit_theme_options
+ *    (Site-Editor). Per JS wird der Site-Editor auf das Freigegebene reduziert:
+ *    nur Stile, oder Vorlagen ohne den Stile-Bereich.
  *
  * Der Administrator (manage_options) ist nie betroffen.
  */
@@ -56,7 +57,7 @@ final class RoleRestrictions
     {
         add_filter('block_editor_settings_all', [$this, 'filterEditorSettings'], 10, 2);
         add_filter('allowed_block_types_all', [$this, 'filterAllowedBlocks'], 20, 2);
-        add_filter('user_has_cap', [$this, 'grantStylesCap'], 10, 4);
+        add_filter('user_has_cap', [$this, 'grantSiteEditorCap'], 10, 4);
         add_action('enqueue_block_editor_assets', [$this, 'enqueueAssets']);
     }
 
@@ -130,8 +131,10 @@ final class RoleRestrictions
     }
 
     /**
-     * Stile-Rollen bekommen edit_theme_options (Zugang zum Site-Editor). Der
-     * Site-Editor wird per JS auf den Stile-Bereich reduziert.
+     * Stile- und Vorlagen-Rollen bekommen edit_theme_options (Zugang zum
+     * Site-Editor). Mehr nicht: wp_template, wp_template_part, wp_navigation und
+     * wp_global_styles mappen im Core alle auf genau diese Capability. Was im
+     * Site-Editor sichtbar ist, reduziert role-editor.js.
      *
      * @param array<string, bool> $allcaps
      * @param array<int, string>  $caps
@@ -139,32 +142,31 @@ final class RoleRestrictions
      * @param WP_User             $user
      * @return array<string, bool>
      */
-    public function grantStylesCap(array $allcaps, array $caps, array $args, $user): array
+    public function grantSiteEditorCap(array $allcaps, array $caps, array $args, $user): array
     {
         if (! $user instanceof WP_User || ! empty($allcaps['manage_options'])) {
             return $allcaps;
         }
 
-        foreach ($this->config->rolesWithStyles() as $slug) {
-            if (in_array($slug, $user->roles, true)) {
-                $allcaps['edit_theme_options'] = true;
-                break;
-            }
+        if ($this->config->userHasStyles($user) || $this->config->userHasTemplates($user)) {
+            $allcaps['edit_theme_options'] = true;
         }
 
         return $allcaps;
     }
 
     /**
-     * Editor-JS für Vorlagen-Modus (Blöcke-Tab weg) und Stile-Reduktion im
-     * Site-Editor. Konfiguration kommt aus dem aktuellen User-Modus.
+     * Editor-JS für Vorlagen-Modus (Blöcke-Tab weg) und die Reduktion des
+     * Site-Editors. Konfiguration kommt aus dem aktuellen User.
      */
     public function enqueueAssets(): void
     {
         $mode = $this->currentUserMode();
-        $stylesOnly = $this->currentUserStylesOnly();
+        [$styles, $templates] = $this->currentUserSiteEditorAccess();
+        $stylesOnly = $styles && ! $templates;
+        $hideStyles = $templates && ! $styles;
 
-        if ($mode === RolesConfig::MODE_FULL && ! $stylesOnly) {
+        if ($mode === RolesConfig::MODE_FULL && ! $stylesOnly && ! $hideStyles) {
             return;
         }
 
@@ -185,6 +187,7 @@ final class RoleRestrictions
         wp_localize_script('rh-editor-roles', 'rhEditorRoles', [
             'mode' => $mode,
             'stylesOnly' => $stylesOnly,
+            'hideStyles' => $hideStyles,
         ]);
     }
 
@@ -221,28 +224,23 @@ final class RoleRestrictions
     }
 
     /**
-     * Soll der Site-Editor für den aktuellen User auf Stile reduziert werden?
-     * Nur wenn er die Stile-Freigabe über eine verwaltete Rolle hat und nicht
-     * ohnehin Admin ist.
+     * Site-Editor-Freigaben des aktuellen Users als [Stile, Vorlagen]. Admins
+     * und Nicht-Eingeloggte laufen nie über die Freigaben.
+     *
+     * @return array{0: bool, 1: bool}
      */
-    private function currentUserStylesOnly(): bool
+    private function currentUserSiteEditorAccess(): array
     {
         if (current_user_can('manage_options')) {
-            return false;
+            return [false, false];
         }
 
         $user = wp_get_current_user();
         if (! $user instanceof WP_User || $user->ID === 0) {
-            return false;
+            return [false, false];
         }
 
-        foreach ($this->config->rolesWithStyles() as $slug) {
-            if (in_array($slug, $user->roles, true)) {
-                return true;
-            }
-        }
-
-        return false;
+        return [$this->config->userHasStyles($user), $this->config->userHasTemplates($user)];
     }
 
     private function isPostEditorContext($context): bool
