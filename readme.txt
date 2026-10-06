@@ -4,7 +4,7 @@ Tags: editor, gutenberg, svg, block patterns, block styles
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.2.6
+Stable tag: 0.2.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,6 +27,10 @@ The block whitelist for the category is extensible via the rh-blueprint/editor/c
 Part of the rh-blueprint collection. Settings live under RH Blueprint > Editor.
 
 == Changelog ==
+
+= 0.2.7 =
+* White label: when the core (2.9 or later) has a brand set, the module name in notices uses the brand instead of "RH".
+* Author URI points to robinherbeck.com. Adds the GPLv2 LICENSE file.
 
 = 0.2.6 =
 * Bundles rh-blueprint-core 2.8.0. Same features as 0.2.5, which got no release build.
