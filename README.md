@@ -10,6 +10,7 @@ Räumt den Block-Editor für den Endkunden auf und ergänzt das wenige, was der 
 - **Eigene Block-Kategorie**: gruppiert ausgewählte Blöcke in eine eigene Kategorie oben im Inserter. Inhalt frei konfigurierbar: ganze Kategorien übernehmen (auch künftige Blöcke automatisch) und/oder einzelne Blöcke, andere Kategorien pro Stück ausblenden.
 - **SVG-Upload** (opt-in): erlaubt SVG in der Mediathek mit einfacher Sanitisierung (script/on*/javascript: raus). Nur für vertrauenswürdige Redakteure.
 - **Block-Style-Helper**: eine globale Funktion, um Block-Styles idempotent zu registrieren.
+- **Umbruchstellen**: weiches Trennzeichen (`&shy;`, Trennstrich nur beim Umbruch) und unsichtbarer Umbruch (U+200B, ohne Trennstrich) per Knopf im Textformat-Menü oder Kürzel (Ctrl+Option+S bzw. Ctrl+Option+U, unter Windows Alt+Shift+S/U). Im Editor markiert ein kleiner blauer Pfeil die Stelle (gefüllt: Trennzeichen, hohl: unsichtbarer Umbruch), Klick darauf entfernt das Zeichen. Gespeichert wird nur das Zeichen, das Frontend bleibt frei von Markierungen. Funktioniert auch im Modus „nur Inhalt“.
 
 ## Einstellungen
 

@@ -40,6 +40,7 @@ final class Plugin
 
         $config = new BlockCategoryConfig();
         (new Editor($config))->boot();
+        (new SoftBreak())->boot();
 
         $roles = new RolesConfig();
         (new RoleRestrictions($roles))->boot();

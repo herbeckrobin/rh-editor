@@ -1,0 +1,45 @@
+/*
+ * Markierung der Umbruchstellen, nur im Editor geladen. Der Wrapper existiert
+ * ausschliesslich im Editor-DOM (siehe assets/js/soft-break.js).
+ *
+ * Kleiner Pfeil über der Zeile an der Stelle des Zeichens. Weiches Trennzeichen:
+ * gefüllt, unsichtbarer Umbruch: hohl. Breite 0, damit der Text nicht springt.
+ */
+.rh-break-mark {
+	position: relative;
+	display: inline;
+}
+
+.rh-break-mark::before {
+	content: "";
+	position: absolute;
+	left: -4px;
+	/* Knapp über der Versalhöhe, skaliert mit der Schriftgröße. */
+	top: calc(0.2em - 7px);
+	width: 0;
+	height: 0;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	border-top: 5px solid #3858e9;
+	opacity: 0.8;
+	/* Heller Saum, damit der Pfeil auch auf dunklem Grund sichtbar bleibt. */
+	filter: drop-shadow(0 0 1px #fff);
+	cursor: pointer;
+	pointer-events: auto;
+}
+
+.rh-break-mark[data-rh-break="zwsp"]::before {
+	left: -3px;
+	top: calc(0.2em - 9px);
+	width: 6px;
+	height: 6px;
+	box-sizing: border-box;
+	border: 0;
+	border-right: 1.5px solid #3858e9;
+	border-bottom: 1.5px solid #3858e9;
+	transform: rotate(45deg);
+}
+
+.rh-break-mark:hover::before {
+	opacity: 1;
+}
