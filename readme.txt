@@ -4,7 +4,7 @@ Tags: editor, gutenberg, svg, block patterns, block styles
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.2.4
+Stable tag: 0.2.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,12 +20,16 @@ RH Editor tidies the block editor for the end customer and adds the few things W
 * Curated block category: group the common core blocks into one category at the top of the inserter, with a configurable label
 * SVG upload (opt-in): allow SVG files in the media library with a basic sanitisation pass (script tags, on* handlers and javascript: URLs are stripped). Only enable for trusted editors
 * Block-style helper: a global function rh_editor_register_block_style( $block, $name, $label ) that registers a block style idempotently (unregister first), for use from the theme
+* Break points: insert a soft hyphen (U+00AD) or an invisible line break opportunity (U+200B) from the text format menu or with Ctrl+Option+S / Ctrl+Option+U (Alt+Shift+S / Alt+Shift+U on Windows). A small blue arrow marks each one in the editor only, a click on it removes the character. Only the character is saved
 
 The block whitelist for the category is extensible via the rh-blueprint/editor/category_blocks filter. The category slug and block list come from PHP and are mirrored into the editor (single source).
 
 Part of the rh-blueprint collection. Settings live under RH Blueprint > Editor.
 
 == Changelog ==
+
+= 0.2.5 =
+* New: break points for long words. Soft hyphen and invisible line break via button or keyboard shortcut, marked in the editor with a small arrow that removes the character on click. Works for content-only editors. Saved content contains only the character, no wrapper.
 
 = 0.2.4 =
 * New role option "Vorlagen und Logo bearbeiten": the role can edit templates, template parts, navigation and patterns in the site editor, plus the site logo and site icon. Settings access is limited to logo and icon, every other site setting stays locked. Off by default.
